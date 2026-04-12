@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Urbino Interattiva PRO - Luoghi della memoria</title>
+  <style>
+    :root{
+      --bg-1:#e9e1d1;
+      --bg-2:#f7f3eb;
+      --ink:#2f2419;
+      --ink-soft:#5b4b3d;
+      --accent:#7a4b2a;
+      --accent-2:#a86a3c;
+      --card:rgba(255,252,246,.88);
+      --line:rgba(70,40,20,.12);
+      --shadow:0 18px 42px rgba(34,22,12,.22);
+      --shadow-soft:0 10px 24px rgba(34,22,12,.14);
+      --radius:22px;
+    }
+    *{ box-sizing:border-box; }
+    html, body{
+      margin:0; min-height:100%;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,.7) 0%, rgba(255,255,255,0) 28%),
+        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+      color:var(--ink); font-family: Georgia, "Times New Roman", serif;
+    }
+    body.locked{ overflow-x:hidden; overflow-y:auto; }
+    .shell{ max-width:1400px; margin:0 auto; padding:20px; }
+    .hero{
+      position:relative; overflow:hidden; border:1px solid var(--line); border-radius:28px;
+      background:linear-gradient(135deg, rgba(255,250,243,.95), rgba(244,235,221,.88));
+      box-shadow:var(--shadow); padding:22px 22px 18px; margin-bottom:18px;
+    }
+    .hero::before{ content:""; position:absolute; inset:auto -80px -120px auto; width:260px; height:260px; border-radius:50%;
+      background:radial-gradient(circle, rgba(168,106,60,.18) 0%, rgba(168,106,60,0) 68%); pointer-events:none; }
+    .hero-top{ display:flex; flex-wrap:wrap; gap:14px; justify-content:space-between; align-items:flex-start; }
+    .hero h1{ margin:0 0 8px; font-size:clamp(30px, 4vw, 44px); line-height:1.05; color:#4a2a15; letter-spacing:.2px; }
+    .hero p{ margin:0; max-width:900px; font-size:15px; line-height:1.55; color:var(--ink-soft); }
+    .badge-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+    .badge{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.7); border:1px solid var(--line); box-shadow:var(--shadow-soft); font-size:13px; color:#53351f; backdrop-filter: blur(6px); }
+    .toolbar{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:18px; }
+    .btn, .file-label{ display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:10px 16px; border-radius:999px; font-size:14px; font-weight:600; border:1px solid transparent; text-decoration:none; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, background .15s ease; user-select:none; }
+    .btn:hover, .file-label:hover{ transform:translateY(-1px); box-shadow:var(--shadow-soft); }
+    .btn.primary, .file-label.primary{ background:#5f3a21; color:#fff; box-shadow:0 10px 24px rgba(95,58,33,.28); }
+    .btn.secondary, .file-label.secondary{ background:rgba(255,255,255,.68); color:#4a2a15; border-color:var(--line); }
+    .btn.ghost{ background:rgba(255,255,255,.3); color:#4a2a15; border-color:var(--line); }
+    input[type="file"]{ display:none; }
+    .layout{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:18px; align-items:start; }
+    .map-card, .side-card{ border:1px solid var(--line); border-radius:28px; overflow:hidden; background:rgba(255,255,255,.7); box-shadow:var(--shadow); backdrop-filter: blur(8px); }
+    .map-topbar{ display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.58)); }
+    .map-topbar .left{ display:flex; flex-direction:column; gap:4px; }
+    .eyebrow{ font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:#87664e; font-weight:700; }
+    .map-title{ font-size:19px; font-weight:700; color:#4a2a15; }
+    .status{ display:flex; align-items:center; gap:8px; font-size:13px; color:#6b5646; background:rgba(255,255,255,.7); border:1px solid var(--line); border-radius:999px; padding:8px 12px; }
+    .status-dot{ width:10px; height:10px; border-radius:50%; background:#3f9a52; box-shadow:0 0 0 6px rgba(63,154,82,.14); animation:glow 1.8s infinite; }
+    @keyframes glow{ 0%{ box-shadow:0 0 0 0 rgba(63,154,82,.24); } 100%{ box-shadow:0 0 0 10px rgba(63,154,82,0); } }
+    .map-wrap{ position:relative; width:100%; aspect-ratio:1600 / 900; overflow:hidden; background:#d8d1c5; isolation:isolate; }
+    
+    to{ stroke-dashoffset:-220; }
+    }
+    .focus-halo{
+      position:absolute;
+      width:240px;
+      height:240px;
+      border-radius:50%;
+      background:
+        radial-gradient(circle, rgba(255,244,214,.95) 0%, rgba(255,220,150,.58) 22%, rgba(255,205,120,.22) 42%, rgba(255,244,214,0) 72%);
+      box-shadow:
+        0 0 38px rgba(255,214,120,.42),
+        0 0 90px rgba(255,214,120,.26),
+        inset 0 0 22px rgba(255,255,255,.35);
+      transform:translate(-50%, -50%) scale(.86);
+      opacity:0;
+      pointer-events:none;
+      z-index:2;
+      transition:opacity .22s ease, transform .22s ease, left .22s ease, top .22s ease;
+      mix-blend-mode:screen;
+      filter:saturate(1.15);
+    }
+    .focus-halo.visible{
+      opacity:1;
+      transform:translate(-50%, -50%) scale(1);
+    }
+    .tour-panel{
+      margin-top:14px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.62);
+      padding:12px 13px;
+    }
+    .tour-panel strong{
+      display:block;
+      margin-bottom:8px;
+      color:#432618;
+      font-size:14px;
+    }
+    .tour-progress{
+      height:8px;
+      border-radius:999px;
+      background:#e8dece;
+      overflow:hidden;
+      margin-top:8px;
+      position:relative;
+    }
+    .tour-progress-fill{
+      position:absolute;
+      inset:0 auto 0 0;
+      width:0%;
+      background:linear-gradient(90deg, #7a4b2a, #b87443);
+      transition:width .25s ease;
+    }
+    .tour-meta{
+      font-size:12px;
+      color:#6b5647;
+      margin-top:8px;
+      line-height:1.45;
+    }
+    .map-wrap::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.04)), radial-gradient(circle at 10% 10%, rgba(255,255,255,.22), rgba(255,255,255,0) 26%); pointer-events:none; z-index:1; }
+    #mapImage{ width:100%; height:100%; object-fit:cover; object-position:center 64%; display:block; background:#d8d1c5; }
+    .hotspot{ position:absolute; width:28px; height:28px; transform:translate(-50%, -50%); border-radius:50%; border:2px solid rgba(255,242,207,.95); background:radial-gradient(circle at 35% 35%, #362418 0%, #1f1510 70%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; cursor:pointer; user-select:none; z-index:3; touch-action:manipulation; box-shadow:0 0 0 5px rgba(122,75,42,.22), 0 10px 18px rgba(0,0,0,.22); transition:transform .18s ease, box-shadow .18s ease, background .18s ease; }
+    .hotspot:hover, .hotspot.active{ transform:translate(-50%, -50%) scale(1.12); box-shadow:0 0 0 7px rgba(122,75,42,.28), 0 12px 22px rgba(0,0,0,.28); background:radial-gradient(circle at 35% 35%, #52311f 0%, #26160f 75%); }
+    .hotspot::before{ content:""; position:absolute; inset:-8px; border-radius:50%; border:2px solid rgba(122,75,42,.2); animation:ring 2.2s infinite; }
+    @keyframes ring{ 0%{ transform:scale(.82); opacity:.95; } 100%{ transform:scale(1.55); opacity:0; } }
+    
+    .hotspot:hover .hotspot-label, .hotspot.active 
+    .popup{ position:absolute; z-index:10; width:min(430px, calc(100vw - 34px)); display:none; border-radius:22px; border:1px solid rgba(70,40,20,.12); background:rgba(255,250,244,.97); box-shadow:0 24px 50px rgba(0,0,0,.24); overflow:hidden; transform:translateY(6px) scale(.98); opacity:0; transition:opacity .16s ease, transform .16s ease; backdrop-filter: blur(10px); }
+    .popup.visible{ display:block; opacity:1; transform:translateY(0) scale(1); }
+    .popup-head{ padding:14px 16px 10px; background:linear-gradient(180deg, rgba(255,255,255,.94), rgba(247,239,228,.92)); border-bottom:1px solid var(--line); }
+    .type-chip{ display:inline-flex; align-items:center; gap:7px; padding:5px 9px; border-radius:999px; background:#efe6d6; color:#6a4324; font-size:11px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; margin-bottom:8px; }
+    .popup-title{ margin:0; font-size:20px; line-height:1.1; color:#4a2a15; }
+    .popup-body{ padding:14px 16px 16px; }
+    .popup-text{ margin:0 0 12px; font-size:15px; line-height:1.55; color:#433227; }
+    .media-frame{ border-radius:16px; overflow:hidden; border:1px solid rgba(70,40,20,.1); background:#111; box-shadow:var(--shadow-soft); }
+    .media-frame audio{ width:100%; display:block; background:#111; }
+    .media-frame img{ width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#161616; }
+    .mini-note{ margin-top:10px; font-size:12px; line-height:1.45; color:#73553e; }
+    .popup-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .tiny{ display:inline-flex; align-items:center; gap:7px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.75); color:#4a2a15; padding:8px 10px; font-size:12px; cursor:pointer; }
+    .side-card{ padding:18px; position:sticky; top:18px; }
+    .side-card h2{ margin:0 0 8px; font-size:22px; color:#4a2a15; }
+    .side-card p{ margin:0 0 12px; font-size:14px; line-height:1.55; color:#5f4e41; }
+    .steps{ display:grid; gap:10px; margin-top:12px; }
+    .step{ display:grid; grid-template-columns:34px 1fr; gap:10px; align-items:start; border:1px solid var(--line); background:rgba(255,255,255,.55); border-radius:18px; padding:10px 12px; }
+    .step-num{ width:34px; height:34px; border-radius:50%; display:grid; place-items:center; background:#4a2a15; color:#fff; font-weight:700; box-shadow:var(--shadow-soft); }
+    .step strong{ display:block; margin-bottom:2px; font-size:14px; color:#432618; }
+    .step span{ font-size:13px; color:#6b5647; line-height:1.4; }
+    .info-box{ margin-top:14px; border-radius:18px; border:1px dashed rgba(122,75,42,.35); background:rgba(255,248,240,.72); padding:12px 13px; font-size:12px; line-height:1.5; color:#674831; }
+    .ambient{ display:flex; align-items:center; gap:10px; margin-top:14px; padding:12px 13px; border-radius:18px; border:1px solid var(--line); background:rgba(255,255,255,.62); }
+    .ambient .pill{ display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 11px; border:1px solid var(--line); background:rgba(255,255,255,.78); font-size:12px; color:#4a2a15; }
+    .ambient-bar{ height:8px; flex:1; border-radius:999px; background:#e8dece; overflow:hidden; position:relative; }
+    .ambient-fill{ position:absolute; inset:0 auto 0 0; width:0%; background:linear-gradient(90deg, #7a4b2a, #b87443); transition:width .2s ease; }
+    .cinematic-overlay::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,248,230,0.42) 0%,
+      rgba(255,240,210,0.28) 22%,
+      rgba(255,225,180,0.12) 40%,
+      rgba(0,0,0,0.22) 65%,
+      rgba(0,0,0,0.65) 100%
+    );
+}
+    .cinematic-overlay::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        repeating-linear-gradient(180deg, rgba(255,255,255,.025) 0 2px, rgba(0,0,0,0) 2px 4px);
+      opacity:.22;
+      pointer-events:none;
+      mix-blend-mode:soft-light;
+    }
+    .cinematic-title{
+      margin:0 0 14px;
+      font-size:clamp(28px, 4.2vw, 48px);
+      line-height:1;
+      color:#4a2a15;
+      letter-spacing:.02em;
+      text-wrap:balance;
+    }
+    .cinematic-kicker{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.18em;
+      color:#8a6548;
+      font-weight:700;
+      margin-bottom:10px;
+    }
+    .cinematic-quote{
+      margin:14px 0 0;
+      padding-left:14px;
+      border-left:3px solid rgba(122,75,42,.35);
+      font-size:14px;
+      line-height:1.7;
+      color:#5b4738;
+      font-style:italic;
+    }
+    .overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  background: linear-gradient(180deg, rgba(25,16,10,.72), rgba(25,16,10,.58)),
+              radial-gradient(circle at center, rgba(255,255,255,.12), rgba(255,255,255,0) 45%);
+  backdrop-filter: blur(6px);
+}
+    .overlay.hidden{ display:none; }
+    .overlay-card{
+  width: min(92vw, 680px);
+  max-width: 680px;
+  margin: auto;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,252,0.985),
+    rgba(248,240,228,0.96)
+  );
+
+  box-shadow:
+    0 0 55px rgba(255,235,190,0.18),
+    0 18px 45px rgba(0,0,0,0.28);
+
+  backdrop-filter: blur(6px);
+
+  border-radius: 22px;
+  padding: 22px;
+}
+    .overlay-card h2{ margin:0 0 12px; font-size:clamp(28px, 4vw, 42px); line-height:1.06; color:#4a2a15; }
+    .overlay-card p{ margin:0 0 10px; font-size:15px; line-height:1.6; color:#3f2f24; }
+    .overlay-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px; margin:14px 0 18px; }
+    .overlay-mini{ border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.62); padding:10px; font-size:12px; color:#4a392d; line-height:1.5; }
+    .overlay-actions{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+    .fineprint{ margin-top:12px; font-size:12px; color:#6b5647; }
+    @media (max-width:1100px){ .layout{ grid-template-columns:1fr; } .side-card{ position:relative; top:auto; } }
+    @media (max-width:720px){
+      .shell{ padding:14px; } .hero{ padding:18px; border-radius:22px; }
+      .map-card, .side-card{ border-radius:22px; } .popup{ width:min(390px, calc(100vw - 22px)); }
+      .overlay-grid{ grid-template-columns:1fr; } .map-topbar{ padding:12px 14px; } .popup-title{ font-size:18px; }
+    }
+  
+    html{
+      -webkit-text-size-adjust:100%;
+      text-size-adjust:100%;
+    }
+    body{
+      overflow-x:hidden;
+    }
+    .overlay-card{
+  width: min(92vw, 680px);
+  max-width: 680px;
+  margin: auto;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,252,0.985),
+    rgba(248,240,228,0.96)
+  );
+
+  box-shadow:
+    0 0 55px rgba(255,235,190,0.18),
+    0 18px 45px rgba(0,0,0,0.28);
+
+  backdrop-filter: blur(6px);
+
+  border-radius: 22px;
+  padding: 22px;
+}
+    .overlay-actions{
+      position:sticky;
+      bottom:0;
+      padding-top:10px;
+      padding-bottom:max(2px, env(safe-area-inset-bottom));
+      background:linear-gradient(180deg, rgba(255,255,252,0), rgba(255,255,252,.82) 30%, rgba(248,240,228,.96) 100%);
+      z-index:2;
+    }
+
+    @media (max-width: 768px){
+  .overlay{
+    align-items: flex-start;
+    padding: 14px 10px;
+  }
+
+  .overlay-card{
+    width: min(94vw, 520px);
+    max-width: 520px;
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .cinematic-title{
+    font-size: clamp(24px, 7vw, 34px);
+    line-height: 1.02;
+    margin-bottom: 10px;
+  }
+
+  .cinematic-kicker{
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  .overlay-card p{
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .overlay-grid{
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin: 10px 0 12px;
+  }
+
+  .overlay-mini{
+    padding: 9px 10px;
+    font-size: 12px;
+    line-height: 1.42;
+  }
+
+  .cinematic-quote{
+    margin: 10px 0 0;
+    padding-left: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .cinematic-quote ul{
+    margin: 8px 0 0 16px;
+  }
+
+  .btn, .file-label{
+    min-height: 42px;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .overlay-actions .btn{
+    width: 100%;
+  }
+
+  .fineprint{
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+}
+      .overlay-card{
+  width: min(92vw, 680px);
+  max-width: 680px;
+  margin: auto;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,252,0.985),
+    rgba(248,240,228,0.96)
+  );
+
+  box-shadow:
+    0 0 55px rgba(255,235,190,0.18),
+    0 18px 45px rgba(0,0,0,0.28);
+
+  backdrop-filter: blur(6px);
+
+  border-radius: 22px;
+  padding: 22px;
+}
+      .cinematic-title{
+        font-size:clamp(24px, 7vw, 34px);
+        line-height:1.02;
+        margin-bottom:10px;
+      }
+      .cinematic-kicker{
+        font-size:11px;
+        margin-bottom:8px;
+      }
+      .overlay-card p{
+        font-size:14px;
+        line-height:1.45;
+      }
+      .overlay-grid{
+        grid-template-columns:1fr;
+        gap:8px;
+        margin:10px 0 12px;
+      }
+      .overlay-mini{
+        padding:9px 10px;
+        font-size:12px;
+        line-height:1.42;
+      }
+      .cinematic-quote{
+        margin:10px 0 0;
+        padding-left:12px;
+        font-size:13px;
+        line-height:1.55;
+      }
+      .cinematic-quote ul{
+        margin:8px 0 0 16px;
+      }
+      .btn, .file-label{
+        min-height:42px;
+        padding:10px 14px;
+        font-size:14px;
+      }
+      .overlay-actions .btn{
+        width:100%;
+      }
+      .fineprint{
+        margin-top:10px;
+        font-size:11px;
+        line-height:1.4;
+      }
+    }
+
+    @media (max-width: 480px){
+  .overlay{
+    padding: 8px 8px 14px;
+  }
+
+  .overlay-card{
+    width: min(94vw, 420px);
+    max-width: 420px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .cinematic-title{
+    font-size: clamp(22px, 8vw, 30px);
+  }
+
+  .overlay-card p{
+    font-size: 13px;
+  }
+
+  .overlay-mini{
+    font-size: 11px;
+  }
+
+  .cinematic-quote{
+    font-size: 12px;
+  }
+}
+      .overlay-card{
+  width: min(92vw, 680px);
+  max-width: 680px;
+  margin: auto;
+
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,252,0.985),
+    rgba(248,240,228,0.96)
+  );
+
+  box-shadow:
+    0 0 55px rgba(255,235,190,0.18),
+    0 18px 45px rgba(0,0,0,0.28);
+
+  backdrop-filter: blur(6px);
+
+  border-radius: 22px;
+  padding: 22px;
+}
+      .cinematic-title{
+        font-size:clamp(22px, 8vw, 30px);
+      }
+      .overlay-card p{
+        font-size:13px;
+      }
+      .overlay-mini{
+        font-size:11px;
+      }
+      .cinematic-quote{
+        font-size:12px;
+      }
+    }
+
+
+    @media (max-width: 768px){
+      .map-wrap{
+        min-height: 46svh;
+        overflow: hidden;
+      }
+
+      #mapImage{
+        object-position: center 62%;
+      }
+
+      .hotspot{
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+        box-shadow:
+          0 0 0 7px rgba(122,75,42,.22),
+          0 10px 20px rgba(0,0,0,.24);
+      }
+
+      .hotspot::before{
+        inset: -10px;
+      }
+
+      
+
+      .hotspot.active 
+
+      /* mobile-only repositioning to reduce overlap */
+      
+      
+      
+      
+      
+      
+
+      .focus-halo{
+        width: 160px;
+        height: 160px;
+      }
+    }
+
+    @media (max-width: 480px){
+      .map-wrap{
+        min-height: 42svh;
+      }
+
+      .hotspot{
+        width: 42px;
+        height: 42px;
+        font-size: 15px;
+      }
+
+      .hotspot.active 
+
+      
+      
+      
+      
+      
+      
+    }
+
+
+    
+    .hotspot:hover .hotspot-label,
+    .hotspot.active 
+
+
+.hotspot-label{display:none !important;visibility:hidden !important;opacity:0 !important;}
+</style>
+</head>
+<body class="locked">
+  <div class="overlay cinematic-overlay" id="overlay">
+    <div class="overlay-card">
+      <div class="cinematic-kicker">esperienza immersiva</div><h2 class="cinematic-title">Urbino passeggiata nella memoria</h2>
+ 	  <p>
+        <i>"E se fosse da rifare, rifaremmo lo stesso cammino."</i><br>Ritrovo: di fronte al Municipio di Urbino – Via Puccinotti 3.<br>
+	  </p>
+      <div class="overlay-grid">
+         <div class="overlay-mini"><strong>Un percorso nella Storia della città</strong><br>Un percorso a tappe attraverso strade, piazze e angoli spesso attraversati distrattamente, ma che custodiscono storie profonde</div>
+		 <div class="overlay-mini"><strong>Un percorso nella memoria</strong><br>Luoghi che testimoniano il sacrificio di donne e uomini, vittime della violenza nazifascista, e l’impegno di chi ha combattuto per la libertà, la giustizia e la democrazia.</div>
+		 <div class="overlay-mini"><strong>Durante la passeggiata ci fermeremo in sei punti significativi con brevi racconti storici.</strong><br>Via Puccinotti3; Piazza della Repubblica; Parco della Resistenza; viale Bruno Buozzi; Viale Fr.lli Rosselli; Borgo Mercatale</div>         
+		 <p class="cinematic-quote">
+        PERCHÉ PARTECIPARE<br>
+		<ul>
+		<li>Riscoprire una memoria collettiva</li>
+		<li>Riconnettersi con la storia</li>
+		<li>Dare voce a chi non può più raccontarla</li>
+		<li>Trasmettere memoria alle nuove generazioni</li>
+      </p>
+      </div>
+      <div class="overlay-actions">
+        <button class="btn primary" id="startExperienceBtn" type="button">Avvia l'esperienza</button>
+      </div>
+      <div class="fineprint">
+        Questa passeggiata è un’occasione per riscoprire una memoria collettiva, radicata nel territorio, che rischia di sbiadire se non viene condivisa, raccontata e vissuta.
+      </div>
+    </div>
+  </div>
+
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1 style="display: flex; justify-content: space-between; align-items: center;">
+  <span>
+    La Resistenza a Urbino e dintorni.<br>
+    <i>Senza memoria non c'è futuro</i>
+  </span>
+  <img src="logo-removebg-preview.png" class="header-logo" alt="logo">
+</h1>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn ghost" id="toggleAmbientBtn" type="button">Audio ambientale: ON</button>
+        <button class="btn ghost" id="stopMediaBtn" type="button">Ferma media</button>
+        <button class="btn ghost" id="guidedTourBtn" type="button">Avvia visita guidata</button>
+      </div>
+    </section>
+
+    <section class="layout">
+      <article class="map-card">
+        <div class="map-topbar">
+          <div class="left">
+            <div class="eyebrow">Atlante interattivo della memoria</div>
+            <div class="map-title">Tocca i punti numerati per aprire il popup audio col racconto</div>
+          </div>
+          <div class="status">
+            <span class="status-dot"></span>
+            <span id="statusText">Pronto all\'avvio</span>
+          </div>
+        </div>
+
+        <div class="map-wrap" id="mapWrap">
+          <img id="mapImage" src="mappa2.png" alt="Mappa offline di Urbino città">
+          <button class="hotspot" data-id="1" style="left: 55.1%; top: 51.1%;" aria-label="Piazza della Repubblica">
+            1
+          </button>
+          <button class="hotspot" data-id="2" style="left: 43.5%; top: 48.5%;" aria-label="Parco della Resistenza">
+            2
+          </button>
+          <button class="hotspot" data-id="3" style="left: 38.9%; top: 56.1%;" aria-label="Monumento ai Caduti">
+            3
+          </button>
+          <button class="hotspot" data-id="4" style="left: 42.5%; top: 66.0%;" aria-label="Casa delle Vigne">
+            4
+          </button>
+          <button class="hotspot" data-id="5" style="left: 26.3%; top: 87.8%;" aria-label="Incrocio Rosselli - Bocca Trabaria">
+            5
+          </button>
+          <button class="hotspot" data-id="6" style="left: 45.0%; top: 71.3%;" aria-label="Borgo Mercatale">
+            6
+          </button>
+          <div class="focus-halo" id="focusHalo"></div>
+          <div class="popup" id="popup" aria-live="polite"></div>
+        </div>
+      </article>
+
+      <aside class="side-card">
+        <h2>Percorso nella memoria</h2>
+        <p>
+          Il percorso inizia alla <i>Lapide per il Decennale della Liberazione di Urbino</i> sulla <b>Facciata del Municipio in Via Puccinotti 3</b>.<br>
+		  Inaugurazione: 29 agosto 1954.<br> 
+		  Promotori: Amministrazione Comunale e Comitato Cittadino<br>
+		  Finanziamento: Amministrazione Comunale.
+        </p>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div><strong>Piazza della Repubblica</strong><span>Inizio di Via Vittorio Veneto.<br>
+		  <code>Inaugurazione: 18 febbraio 1945</code><br>
+		  <code>Promotore: Anpi Sezione di Urbino</code><br>
+		  <code>Finanziamento: Amministrazione Comunale</code></span></div></div>
+          <div class="step"><div class="step-num">2</div><div><strong>Parco della Resistenza</strong><span>Fortezza Albornoz.<br>
+	      <code>Inaugurazione: 1° novembre 1980</code><br>
+		  <code>Promotori: Amministrazione Comunale e Anpi Provinciale di Pesaro-Urbino</code>
+		  </span></div></div>
+          <div class="step"><div class="step-num">3</div><div><strong>Monumento ai Caduti</strong><span>Parcheggio di viale Bruno Buozzi.<br>
+		  <code>Inaugurazione: 4 novembre 1946</code><br>
+          <code>Promotore: Anpi-Sez di Urbino</code><br>
+          <code>Finanziamento: Amministrazione Comunale</code></span></div></div>
+          <div class="step"><div class="step-num">4</div><div><strong>Casa delle Vigne</strong><span>Scarpata dell'ex CEA.<br>
+		  <code>Inaugurazione: 2 novembre 1946</code><br>
+		  <code>Promotori: UDI, ANPI, CCL, AG, PCI, PSI</code><br>
+		  <code>Finanziamento: Amministrazione Comunale</code></span></div></div>
+          <div class="step"><div class="step-num">5</div><div><strong>Incrocio Rosselli - Bocca Trabaria</strong><span>Con via Giro dei Debitori.<br>
+		  <code>Inaugurazione: 2 novembre 1945</code><br>
+		  <code>Promotori: UDI, ANPI, CCL, AG, PCI, PSI</code><br>
+		  <code>Finanziamento: Amministrazione Comunale</code></span></div></div>
+          <div class="step"><div class="step-num">6</div><div><strong>Borgo Mercatale</strong><span>Via Nazionale Bocca Trabaria 3.<br>
+		  <code>Inaugurazione: 16 giugno 2006</code><br>
+		  <code>Promotori: I famigliari</code><br>
+		  <code>Finanziamento: Privati</code><br>
+		  <code>Ente preposto alla conservazione: Amministrazione Comunale</code></span></div></div>
+        </div>
+        <div class="tour-panel">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+            <button class="tiny" type="button" id="narratorBtn">Narratore sequenziale: ON</button>
+            <button class="tiny" type="button" id="replayNarrationBtn">Riparti dal punto 1</button>
+          </div>
+          <strong>Visita guidata automatica</strong>
+          <div class="tour-progress"><div class="tour-progress-fill" id="tourProgressFill"></div></div>
+          <div class="tour-meta" id="tourMeta">Puoi avviare una sequenza narrativa che apre i cinque punti in ordine.</div>
+        </div>
+      </aside>
+    </section>
+  </div>
+
+  <audio id="ambientAudio" preload="auto" loop>
+    <source src="Manu.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="narratorAudio" preload="auto"></audio>
+
+  <script>
+    const defaultMapSrc = 'mappa2.png';
+    const slideshowImages = [
+      'img/1.png','img/2.png','img/3.png','img/4.png','img/5.png','img/6.png'
+    ];
+
+    const contents = {
+      1: {
+        title: "Piazza della Repubblica",
+        type: "Audio + slideshow",
+        subtitle: "Inizio di Via Vittorio Veneto",
+        body: "Lapide dedicata ai partigiani urbinati del 1944. Il punto introduce il percorso della memoria nel cuore dello spazio civico della città.",
+        audio: "lapide-partigiani-urbinati-1944.mp3",
+        cue: "Tappa 1, Piazza della Repubblica"
+      },
+      2: {
+        title: "Parco della Resistenza",
+        type: "Audio + slideshow",
+        subtitle: "Fortezza Albornoz",
+        body: "Nel parco della Fortezza Albornoz la memoria della Resistenza si lega a uno dei luoghi panoramici e simbolici di Urbino.",
+        audio: "parco-della-Resistenza.mp3",
+        cue: "Tappa 2, Parco della Resistenza"
+      },
+      3: {
+        title: "Monumento ai Caduti",
+        type: "Audio + slideshow",
+        subtitle: "Parcheggio di viale Bruno Buozzi",
+        body: "Il cippo di ricordo presso il parcheggio del Monumento ai Caduti collega il paesaggio urbano alla memoria pubblica del Novecento.",
+        audio: "cippo-ricordo.mp3",
+        cue: "Tappa 3, Monumento ai Caduti"
+      },
+      4: {
+        title: "Casa delle Vigne",
+        type: "Audio + slideshow",
+        subtitle: "Scarpata dell'ex CEA",
+        body: "In fondo alla scarpata della casa delle Vigne, ex CEA, il cippo dei partigiani richiama un luogo appartato ma centrale nella geografia memoriale urbinate.",
+        audio: "cippo-Partigiani.mp3",
+        cue: "Tappa 4, Casa delle Vigne"
+      },
+      5: {
+        title: "Incrocio Rosselli - Bocca Trabaria",
+        type: "Audio + slideshow",
+        subtitle: "Con via Giro dei Debitori",
+        body: "Il cippo dei sei trucidati si colloca presso l'incrocio tra viale Fratelli Rosselli, via Nazionale Bocca Trabaria e la circonvallazione di via Giro dei Debitori.",
+        audio: "cippo-sei-trucidati.mp3",
+        cue: "Tappa 5, Incrocio Rosselli - Bocca Trabaria"
+      },
+      6: {
+        title: "Borgo Mercatale",
+        type: "Audio + slideshow",
+        subtitle: "Via Nazionale Bocca Trabaria 3",
+        body: "La lapide di Borgo Mercatale inserisce il ricordo nel punto di accesso e snodo urbano tra il centro storico e le vie di attraversamento.",
+        audio: "lapide.mp3",
+        cue: "Tappa 6, Borgo Mercatale"
+      }
+    };
+
+    const overlay = document.getElementById('overlay');
+    const startExperienceBtn = document.getElementById('startExperienceBtn');
+    const imageLoaderIntro = document.getElementById('imageLoaderIntro');
+    const imageLoaderMain = document.getElementById('imageLoaderMain');
+    const useDefaultBtn = document.getElementById('useDefaultBtn');
+    const toggleAmbientBtn = document.getElementById('toggleAmbientBtn');
+    const stopMediaBtn = document.getElementById('stopMediaBtn');
+    const guidedTourBtn = document.getElementById('guidedTourBtn');
+    const focusHalo = document.getElementById('focusHalo');
+    const tourProgressFill = document.getElementById('tourProgressFill');
+    const tourMeta = document.getElementById('tourMeta');
+    const narratorBtn = document.getElementById('narratorBtn');
+    const replayNarrationBtn = document.getElementById('replayNarrationBtn');
+    const ambientAudio = document.getElementById('ambientAudio');
+    const narratorAudio = document.getElementById('narratorAudio');
+    const ambientFill = document.getElementById('ambientFill');
+    const ambientModeText = document.getElementById('ambientModeText');
+    const mapWrap = document.getElementById('mapWrap');
+    const popup = document.getElementById('popup');
+    const mapImage = document.getElementById('mapImage');
+    const statusText = document.getElementById('statusText');
+    const hotspots = [...document.querySelectorAll('.hotspot')];
+
+    let hideTimer = null;
+    let activeHotspot = null;
+    let ambientEnabled = true;
+    let experienceStarted = false;
+    let fadeTimer = null;
+    let slideshowTimer = null;
+    let currentSlideIndex = 0;
+    let popupFadeTimer = null;
+    let guidedTourActive = false;
+    let guidedTourTimer = null;
+    let guidedTourIndex = 0;
+    const guidedTourOrder = ['1','2','3','6','4','5'];
+    const guidedTourStepMs = 12000;
+    let narratorEnabled = true;
+
+    const AMBIENT_BASE = 0.22;
+    const AMBIENT_LOW = 0.04;
+    const FADE_STEP_MS = 60;
+
+    function esc(s){
+      return String(s)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    function setStatus(message){
+      statusText.textContent = message;
+    }
+
+    function updateAmbientBar(){
+      const volume = ambientAudio.volume || 0;
+      ambientFill.style.width = Math.round(volume * 100) + '%';
+      ambientModeText.textContent = ambientEnabled ? 'attivo' : 'spento';
+      toggleAmbientBtn.textContent = 'Audio ambientale: ' + (ambientEnabled ? 'ON' : 'OFF');
+    }
+
+    function fadeAmbientTo(target, duration = 450){
+      clearInterval(fadeTimer);
+      const start = ambientAudio.volume || 0;
+      const steps = Math.max(1, Math.round(duration / FADE_STEP_MS));
+      const delta = (target - start) / steps;
+      let currentStep = 0;
+
+      fadeTimer = setInterval(() => {
+        currentStep += 1;
+        let next = ambientAudio.volume + delta;
+        if ((delta > 0 && next >= target) || (delta < 0 && next <= target) || currentStep >= steps) {
+          next = target;
+          clearInterval(fadeTimer);
+        }
+        ambientAudio.volume = Math.max(0, Math.min(1, next));
+        updateAmbientBar();
+      }, FADE_STEP_MS);
+    }
+
+    async function startAmbient(){
+      if (!ambientEnabled) {
+        ambientAudio.pause();
+        ambientAudio.currentTime = 0;
+        ambientAudio.volume = 0;
+        updateAmbientBar();
+        return;
+      }
+      ambientAudio.volume = 0;
+      try {
+        await ambientAudio.play();
+        fadeAmbientTo(AMBIENT_BASE, 900);
+      } catch (err) {
+        console.warn('Ambient audio bloccato dal browser', err);
+      }
+    }
+
+    function stopAmbient(){
+      fadeAmbientTo(0, 260);
+      setTimeout(() => {
+        ambientAudio.pause();
+        ambientAudio.currentTime = 0;
+      }, 300);
+    }
+
+    function setFocusHalo(hotspot){
+      if (!hotspot) {
+        focusHalo.classList.remove('visible');
+        return;
+      }
+      focusHalo.style.left = hotspot.style.left;
+      focusHalo.style.top = hotspot.style.top;
+      focusHalo.classList.add('visible');
+    }
+
+    function clearTourProgress(){
+      tourProgressFill.style.width = '0%';
+    }
+
+    function animateTourProgress(duration){
+      clearTourProgress();
+      stopNarrator();
+      const start = performance.now();
+      function step(ts){
+        if (!guidedTourActive) return;
+        const pct = Math.min(100, ((ts - start) / duration) * 100);
+        tourProgressFill.style.width = pct + '%';
+        if (pct < 100) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    function stopGuidedTour(silent = false){
+      guidedTourActive = false;
+      clearTimeout(guidedTourTimer);
+      guidedTourTimer = null;
+      guidedTourBtn.textContent = 'Avvia visita guidata';
+      clearTourProgress();
+      if (!silent) tourMeta.textContent = 'Visita guidata interrotta. Puoi riavviarla in qualsiasi momento.';
+    }
+
+    function openHotspotById(id, userInitiated = true){
+      const hotspot = document.querySelector('.hotspot[data-id="' + id + '"]');
+      if (hotspot) showPopup(hotspot, userInitiated);
+    }
+
+    function runGuidedTourStep(){
+      if (!guidedTourActive) return;
+      const id = guidedTourOrder[guidedTourIndex % guidedTourOrder.length];
+      const item = contents[id];
+      openHotspotById(id, true);
+      guidedTourBtn.textContent = 'Ferma visita guidata';
+      tourMeta.textContent = 'Visita guidata in corso: ' + item.title + (narratorEnabled ? ' con narratore attivo.' : '.');
+      animateTourProgress(guidedTourStepMs - 300);
+      guidedTourIndex += 1;
+      guidedTourTimer = setTimeout(runGuidedTourStep, guidedTourStepMs);
+    }
+
+    function startGuidedTour(){
+      guidedTourActive = true;
+      guidedTourIndex = 0;
+      runGuidedTourStep();
+    }
+
+    function stopNarrator(){
+      try{
+        narratorAudio.pause();
+        narratorAudio.currentTime = 0;
+        narratorAudio.removeAttribute('src');
+        narratorAudio.load();
+      } catch(e){}
+    }
+
+    function playNarratorForItem(item){
+      if (!narratorEnabled || !item || !item.audio) return;
+      stopNarrator();
+      narratorAudio.src = item.audio;
+      narratorAudio.volume = 1;
+      const playPromise = narratorAudio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+    }
+
+    function updateNarratorButton(){
+      narratorBtn.textContent = 'Narratore sequenziale: ' + (narratorEnabled ? 'ON' : 'OFF');
+    }
+
+    function popupHtml(item){
+      return `
+        <div class="popup-head">
+          <div class="type-chip">${esc(item.type)}</div>
+          <h3 class="popup-title">${esc(item.title)}</h3>
+        </div>
+        <div class="popup-body">
+          <p class="popup-text"><strong>${esc(item.subtitle)}</strong><br>${esc(item.body)}</p>
+          <div class="media-frame">
+            <img id="slideshowImage" src="img/1.png" alt="Slideshow documentario della tappa">
+          </div>
+          <div class="media-frame" style="margin-top:10px;">
+            <audio controls preload="auto" data-autoplay="true">
+              <source src="${item.audio}" type="audio/mpeg">
+              Il tuo browser non supporta l'audio HTML5.
+            </audio>
+          </div>
+          <div class="mini-note">L'audio parte automaticamente. Lo slideshow usa in loop i file <code>img/1.png</code> ... <code>img/6.png</code>.</div>
+          <div class="popup-actions">
+            <button class="tiny" type="button" data-action="replay">Riavvia audio</button>
+            <button class="tiny" type="button" data-action="close">Chiudi</button>
+          </div>
+        </div>
+      `;
+    }
+
+    
+    function fadeOutMediaElement(el, duration=280){
+      try{
+        const start = el.volume !== undefined ? el.volume : 1;
+        const steps = Math.max(1, Math.round(duration/40));
+        const delta = start/steps;
+        let i=0;
+        const t = setInterval(()=>{
+          i++;
+          let v = (el.volume !== undefined ? el.volume : 1) - delta;
+          if (v <= 0 || i>=steps){
+            v = 0;
+            clearInterval(t);
+            try{ el.pause(); el.currentTime = 0; el.volume = start; }catch(e){}
+          } else {
+            try{ el.volume = Math.max(0, v); }catch(e){}
+          }
+        },40);
+      }catch(e){}
+    }
+
+    function fadeOutCurrentMedia(){
+      popup.querySelectorAll('audio, video').forEach(media=>{
+        fadeOutMediaElement(media, 280);
+      });
+      try{
+        if (typeof narratorAudio !== 'undefined' && !narratorAudio.paused){
+          fadeOutMediaElement(narratorAudio, 280);
+        }
+      }catch(e){}
+    }
+
+    function stopCurrentMedia(){
+      popup.querySelectorAll('audio').forEach(media => {
+        try {
+          media.pause();
+          media.currentTime = 0;
+        } catch (e) {}
+      });
+      clearInterval(slideshowTimer);
+      slideshowTimer = null;
+    }
+
+    function startSlideshow(){
+      const img = popup.querySelector('#slideshowImage');
+      if (!img) return;
+      currentSlideIndex = 0;
+      img.src = slideshowImages[currentSlideIndex];
+      clearInterval(slideshowTimer);
+      slideshowTimer = setInterval(() => {
+        currentSlideIndex = (currentSlideIndex + 1) % slideshowImages.length;
+        img.src = slideshowImages[currentSlideIndex];
+      }, 2400);
+    }
+
+    function playCurrentMedia(item = null){
+      if (ambientEnabled) fadeAmbientTo(AMBIENT_LOW, 320);
+
+      if (narratorEnabled && item && item.audio) {
+        playNarratorForItem(item);
+        return;
+      }
+
+      const media = popup.querySelector('audio[data-autoplay="true"]');
+      if (!media) return;
+      try { media.currentTime = 0; } catch (e) {}
+
+      const playPromise = media.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          console.warn('Autoplay audio bloccato dal browser: click o touch sul popup lo sbloccano.');
+        });
+      }
+    }
+
+    function restoreAmbientAfterPopup(){
+      if (!ambientEnabled) return;
+      if (experienceStarted) fadeAmbientTo(AMBIENT_BASE, 420);
+    }
+
+    function positionPopup(hotspot){
+      const wrapRect = mapWrap.getBoundingClientRect();
+      const hsRect = hotspot.getBoundingClientRect();
+      popup.style.display = 'block';
+      popup.style.visibility = 'hidden';
+
+      const pRect = popup.getBoundingClientRect();
+      let left = hsRect.left - wrapRect.left + 22;
+      let top = hsRect.top - wrapRect.top - pRect.height - 16;
+
+      if (left + pRect.width > wrapRect.width - 10) left = wrapRect.width - pRect.width - 10;
+      if (left < 10) left = 10;
+      if (top < 10) top = hsRect.bottom - wrapRect.top + 14;
+      if (top + pRect.height > wrapRect.height - 10) top = wrapRect.height - pRect.height - 10;
+
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+      popup.style.visibility = 'visible';
+
+      requestAnimationFrame(() => popup.classList.add('visible'));
+    }
+
+    function showPopup(hotspot, userInitiated = false){
+      clearTimeout(hideTimer);
+      stopCurrentMedia();
+      stopNarrator();
+      popup.classList.remove('visible');
+      hotspots.forEach(h => h.classList.remove('active'));
+      hotspot.classList.add('active');
+      activeHotspot = hotspot;
+      setFocusHalo(hotspot);
+
+      const item = contents[hotspot.dataset.id];
+      popup.innerHTML = popupHtml(item);
+      positionPopup(hotspot);
+      setStatus(item.cue || 'Contenuto aperto');
+
+      setTimeout(() => {
+        startSlideshow();
+        playCurrentMedia(item);
+      }, 40);
+    }
+
+    function hidePopup(){
+      clearTimeout(popupFadeTimer);
+      fadeOutCurrentMedia();
+      popup.classList.remove('visible');
+      popup.classList.add('fading-out');
+      hotspots.forEach(h => h.classList.remove('active'));
+      activeHotspot = null;
+      setFocusHalo(null);
+      setStatus(experienceStarted ? 'Esperienza attiva' : 'Pronto all\'avvio');
+      restoreAmbientAfterPopup();
+      popupFadeTimer = setTimeout(() => {
+        popup.classList.remove('fading-out');
+        popup.style.display = 'none';
+        popup.innerHTML = '';
+      }, 290);
+    }
+
+    function delayedHide(){
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(hidePopup, 220);
+    }
+
+    function wirePopupButtons(){
+      popup.addEventListener('click', (e) => {
+        const action = e.target && e.target.dataset ? e.target.dataset.action : '';
+        if (action === 'close') {
+          stopGuidedTour(true);
+          hidePopup();
+        }
+        if (action === 'replay') {
+          playCurrentMedia();
+        }
+        e.stopPropagation();
+      });
+    }
+
+    function applyImageFile(file){
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        mapImage.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function unlockMedia(){
+      if (experienceStarted) return;
+      experienceStarted = true;
+      document.body.classList.remove('locked');
+      overlay.classList.add('hidden');
+      setStatus('Esperienza attiva');
+      await startAmbient();
+      updateAmbientBar();
+    }
+
+    startExperienceBtn.addEventListener('click', async () => {
+      await unlockMedia();
+    });
+
+    if (imageLoaderIntro){
+      imageLoaderIntro.addEventListener('change', async (event) => {
+        applyImageFile(event.target.files && event.target.files[0]);
+        await unlockMedia();
+      });
+    }
+
+    if (imageLoaderMain){
+      imageLoaderMain.addEventListener('change', (event) => {
+        applyImageFile(event.target.files && event.target.files[0]);
+      });
+    }
+
+    if (useDefaultBtn){
+      useDefaultBtn.addEventListener('click', () => {
+        mapImage.src = defaultMapSrc;
+      });
+    }
+
+    toggleAmbientBtn.addEventListener('click', async () => {
+      ambientEnabled = !ambientEnabled;
+      if (ambientEnabled && experienceStarted) {
+        await startAmbient();
+      } else {
+        stopAmbient();
+      }
+      updateAmbientBar();
+    });
+
+    stopMediaBtn.addEventListener('click', () => {
+      fadeOutCurrentMedia();
+      stopNarrator();
+      restoreAmbientAfterPopup();
+      stopGuidedTour(true);
+    });
+
+    guidedTourBtn.addEventListener('click', async () => {
+      if (!experienceStarted) await unlockMedia();
+      if (guidedTourActive) {
+        stopGuidedTour();
+      } else {
+        startGuidedTour();
+      }
+    });
+
+    hotspots.forEach(h => {
+      h.addEventListener('mouseenter', () => showPopup(h, false));
+      h.addEventListener('mouseleave', () => { hidePopup(); });
+
+      h.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!experienceStarted) unlockMedia();
+        if (activeHotspot === h && popup.classList.contains('visible')) {
+          hidePopup();
+        } else {
+          showPopup(h, true)
+        }
+      });
+
+      h.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!experienceStarted) unlockMedia();
+        showPopup(h, true)
+      }, { passive:false });
+
+      h.addEventListener('focus', () => showPopup(h, true));
+      h.addEventListener('blur', delayedHide);
+    });
+
+    
+    
+
+    mapWrap.addEventListener('click', (e) => {
+      if (!e.target.closest('.hotspot') && !e.target.closest('.popup')) {
+        stopGuidedTour(true);
+        hidePopup();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (activeHotspot) positionPopup(activeHotspot);
+    });
+
+    
+    document.addEventListener('touchend', (e) => {
+      const onHotspot = e.target.closest && e.target.closest('.hotspot');
+      if (!onHotspot) {
+        hidePopup();
+      }
+    }, { passive:true });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { stopGuidedTour(true); hidePopup(); }
+    });
+
+    narratorBtn.addEventListener('click', () => {
+      narratorEnabled = !narratorEnabled;
+      if (!narratorEnabled) stopNarrator();
+      updateNarratorButton();
+      tourMeta.textContent = narratorEnabled ? 'Narratore sequenziale attivo.' : 'Narratore sequenziale disattivato.';
+    });
+
+    replayNarrationBtn.addEventListener('click', async () => {
+      if (!experienceStarted) await unlockMedia();
+      stopGuidedTour(true);
+      guidedTourIndex = 0;
+      startGuidedTour();
+    });
+
+    wirePopupButtons();
+    updateAmbientBar();
+    updateNarratorButton();
+  </script>
+</body>
+</html>
