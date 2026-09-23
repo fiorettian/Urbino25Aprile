@@ -27,9 +27,26 @@ th{position:sticky;top:0;z-index:2;background:#5b3019;color:white;text-align:lef
 td{padding:11px;border-bottom:1px solid #eadfd3;vertical-align:top;line-height:1.4} tbody tr:nth-child(even){background:#faf6ef} tbody tr:hover{background:#f3eadf}
 th:nth-child(1),td:nth-child(1){min-width:270px} th:nth-child(2),td:nth-child(2){min-width:180px} th:nth-child(3),td:nth-child(3){min-width:210px}
 .empty{display:none;padding:35px;text-align:center;color:var(--soft)}
+.cards{display:none}
 .note{margin-top:13px;color:#776253;font-size:12px;line-height:1.5}
 @media(max-width:900px){.tools{grid-template-columns:1fr 1fr}.tools .search{grid-column:1/-1}.download{grid-column:1/-1}}
-@media(max-width:600px){.wrap{width:min(100% - 20px,1450px);padding-top:18px}.top{align-items:flex-start}.logo{width:210px}.hero{padding:20px;border-radius:19px}.tools{grid-template-columns:1fr}.tools .search,.download{grid-column:auto}.status{align-items:flex-start;flex-direction:column}}
+@media(max-width:600px){
+.wrap{width:min(100% - 20px,1450px);padding-top:18px}
+.top{align-items:flex-start}.logo{width:210px}
+.hero{padding:20px;border-radius:19px}
+.tools{grid-template-columns:1fr}.tools .search,.download{grid-column:auto}
+.status{align-items:flex-start;flex-direction:column}
+.tablebox{display:none}
+.cards{display:grid;gap:12px}
+.book-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;box-shadow:0 8px 22px rgba(50,30,15,.08)}
+.book-card h2{font-size:20px;line-height:1.2;margin:0 0 7px;color:#4a2a15}
+.book-author{font-weight:700;margin-bottom:13px;color:#69442d}
+.book-data{display:grid;grid-template-columns:1fr;gap:7px;font-family:Arial,sans-serif;font-size:13px;line-height:1.4}
+.book-row{display:grid;grid-template-columns:125px 1fr;gap:8px;border-top:1px solid #eee3d7;padding-top:7px}
+.book-label{font-weight:700;color:#73513b}
+.book-position{margin-top:13px;padding:10px 12px;border-radius:10px;background:#f1e5d7;font-family:Arial,sans-serif;font-size:13px}
+.mobile-empty{display:none;padding:28px;text-align:center;color:var(--soft);background:var(--card);border-radius:16px}
+}
 </style>
 </head>
 <body>
@@ -64,6 +81,8 @@ th:nth-child(1),td:nth-child(1){min-width:270px} th:nth-child(2),td:nth-child(2)
 </table>
 <div class="empty" id="empty">Nessun libro corrisponde ai criteri selezionati.</div>
 </div>
+<div class="cards" id="cards"></div>
+<div class="mobile-empty" id="mobileEmpty">Nessun libro corrisponde ai criteri selezionati.</div>
 <div class="note">Per la collocazione fisica del volume fare riferimento alla colonna “Posizione nello scaffale”.</div>
 </main>
 
@@ -72,6 +91,7 @@ const books=[{"Titolo": "Con il piede straniero sopra il cuore", "Autore": "Leri
 const fields=["Titolo", "Autore", "Casa editrice o ente promotore", "Luogo di pubblicazione", "Categoria", "Lingua", "Pagine", "Posizione nello scaffale", "Anno di pubblicazione"];
 const q=document.getElementById('q'), cat=document.getElementById('categoria'), lang=document.getElementById('lingua'), year=document.getElementById('anno');
 const tbody=document.getElementById('rows'), count=document.getElementById('count'), empty=document.getElementById('empty');
+const cards=document.getElementById('cards'), mobileEmpty=document.getElementById('mobileEmpty');
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function addOptions(el,key,sorter){
   [...new Set(books.map(b=>b[key]).filter(Boolean))].sort(sorter||((a,b)=>a.localeCompare(b,'it',{numeric:true}))).forEach(v=>{
@@ -87,7 +107,22 @@ function render(){
  });
  count.textContent=filtered.length+' '+(filtered.length===1?'volume trovato':'volumi trovati')+' su '+books.length;
  tbody.innerHTML=filtered.map(b=>'<tr>'+fields.map(f=>'<td>'+esc(b[f])+'</td>').join('')+'</tr>').join('');
+ cards.innerHTML=filtered.map(b=>`
+   <article class="book-card">
+     <h2>${esc(b['Titolo'])}</h2>
+     <div class="book-author">${esc(b['Autore'])}</div>
+     <div class="book-data">
+       <div class="book-row"><span class="book-label">Editore / ente</span><span>${esc(b['Casa editrice o ente promotore'])}</span></div>
+       <div class="book-row"><span class="book-label">Pubblicazione</span><span>${esc(b['Luogo di pubblicazione'])}</span></div>
+       <div class="book-row"><span class="book-label">Categoria</span><span>${esc(b['Categoria'])}</span></div>
+       <div class="book-row"><span class="book-label">Lingua</span><span>${esc(b['Lingua'])}</span></div>
+       <div class="book-row"><span class="book-label">Pagine</span><span>${esc(b['Pagine'])}</span></div>
+       <div class="book-row"><span class="book-label">Anno</span><span>${esc(b['Anno di pubblicazione'])}</span></div>
+     </div>
+     <div class="book-position"><strong>Posizione nello scaffale:</strong> ${esc(b['Posizione nello scaffale'])}</div>
+   </article>`).join('');
  empty.style.display=filtered.length?'none':'block';
+ mobileEmpty.style.display=filtered.length?'none':'block';
 }
 [q,cat,lang,year].forEach(el=>el.addEventListener(el===q?'input':'change',render));
 render();
