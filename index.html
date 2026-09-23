@@ -33,6 +33,10 @@ h1{margin:0;color:#4a2a15;font-size:clamp(32px,5vw,54px);line-height:1.04}
 .choice p{margin:0 0 25px;color:#5f4e41;font-size:15px;line-height:1.6}
 .action{margin-top:auto;display:inline-flex;justify-content:center;align-self:flex-start;padding:12px 18px;border-radius:999px;background:var(--accent);color:white;font-family:Arial,sans-serif;font-size:14px;font-weight:700}
 footer{margin-top:27px;text-align:center;color:#725d4d;font-size:12px}
+.social-links{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:14px}
+.social-link{width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:rgba(255,252,246,.82);color:#4a2a15;text-decoration:none;box-shadow:0 7px 18px rgba(34,22,12,.10);transition:transform .15s ease,box-shadow .15s ease,background .15s ease}
+.social-link:hover,.social-link:focus-visible{transform:translateY(-2px);background:#fff;box-shadow:0 10px 22px rgba(34,22,12,.16);outline:none}
+.social-link svg{width:21px;height:21px;fill:currentColor}
 @media(max-width:720px){.page{width:min(100% - 24px,600px);justify-content:flex-start;padding:26px 0 24px}header{margin-bottom:24px}.logo{max-height:120px}.choices{grid-template-columns:1fr;gap:15px}.choice{min-height:0;padding:23px;border-radius:22px}.number{margin-bottom:18px}.action{width:100%}}
 </style>
 </head>
@@ -59,7 +63,17 @@ footer{margin-top:27px;text-align:center;color:#725d4d;font-size:12px}
 <span class="action">Consulta i libri →</span>
 </a>
 </section>
-<footer>Istituto per la Storia del Movimento di Liberazione Egisto Cappellini</footer>
+<footer>
+<div>Istituto per la Storia del Movimento di Liberazione Egisto Cappellini</div>
+<div class="social-links" aria-label="Profili social dell'Istituto Cappellini">
+<a class="social-link" href="https://www.facebook.com/istituto.cappellini" target="_blank" rel="noopener noreferrer" aria-label="Facebook - Istituto Cappellini" title="Facebook">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.19 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.52 1.49-3.91 3.77-3.91 1.09 0 2.23.2 2.23.2v2.47h-1.25c-1.24 0-1.63.77-1.63 1.56v1.89h2.77l-.44 2.91h-2.33V22C18.34 21.25 22 17.08 22 12.06z"/></svg>
+</a>
+<a class="social-link" href="https://www.instagram.com/istituto_cappellini_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram - Istituto Cappellini" title="Instagram">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.8 2h8.4A5.81 5.81 0 0 1 22 7.8v8.4a5.81 5.81 0 0 1-5.8 5.8H7.8A5.81 5.81 0 0 1 2 16.2V7.8A5.81 5.81 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6A3.6 3.6 0 0 0 16.4 4H7.6zm9.65 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+</a>
+</div>
+</footer>
 </main>
 </body>
 </html>
