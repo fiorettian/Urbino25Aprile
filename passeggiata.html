@@ -626,6 +626,42 @@
   }
 }
 
+
+
+/* Collegamento alla nuova Home */
+.home-link-row{
+  max-width:1400px;
+  margin:0 auto 12px;
+  display:flex;
+  justify-content:flex-start;
+}
+.home-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:42px;
+  padding:9px 15px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.68);
+  color:#4a2a15;
+  text-decoration:none;
+  font-size:14px;
+  font-weight:600;
+  box-shadow:var(--shadow-soft);
+  transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.home-link:hover,.home-link:focus-visible{
+  transform:translateY(-1px);
+  background:rgba(255,255,255,.9);
+  box-shadow:0 12px 26px rgba(34,22,12,.18);
+  outline:none;
+}
+@media (max-width:720px){
+  .home-link-row{margin-bottom:10px;}
+  .home-link{min-height:40px;padding:8px 13px;font-size:13px;}
+}
+
 </style>
 </head>
 <body class="locked">
@@ -658,6 +694,9 @@
   </div>
 
   <div class="shell">
+    <div class="home-link-row">
+      <a class="home-link" href="index.html" aria-label="Torna alla Home">← Torna alla Home</a>
+    </div>
     <section class="hero">
       <div class="hero-top">
         <div>
